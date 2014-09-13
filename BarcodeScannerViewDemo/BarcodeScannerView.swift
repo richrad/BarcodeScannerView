@@ -41,14 +41,14 @@ class BarcodeScannerView: UIView, AVCaptureMetadataOutputObjectsDelegate, AVCapt
     let captureSession = AVCaptureSession()
     let videoCaptureDevice = AVCaptureDevice.defaultDeviceWithMediaType(AVMediaTypeVideo)
     
-    init(coder aDecoder: NSCoder!) {
+    required init(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         layer.masksToBounds = true
         unhighlightedBorderColor = borderColor
         startCamera()
     }
     
-    init(frame: CGRect)  {
+    override init(frame: CGRect)  {
         super.init(frame: frame)
     }
     
