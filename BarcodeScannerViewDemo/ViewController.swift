@@ -10,22 +10,19 @@ import UIKit
 
 class ViewController: UIViewController, BarcodeScannerViewDelegate {
     
-    @IBOutlet var barcodeScannerView: BarcodeScannerView?
+    @IBOutlet private weak var barcodeScannerView: BarcodeScannerView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
-        barcodeScannerView!.delegate = self
+        barcodeScannerView.delegate = self
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
     
     func didRecognizeBarcode(barcode: String) {
-        println("\(barcode)")
+        print("\(barcode)")
     }
 
 }
-

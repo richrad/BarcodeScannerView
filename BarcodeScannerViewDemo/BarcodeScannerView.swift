@@ -37,11 +37,11 @@ class BarcodeScannerView: UIView, AVCaptureMetadataOutputObjectsDelegate, AVCapt
     }
     
     var unhighlightedBorderColor: UIColor?
-    var camPreviewLayer: AVCaptureVideoPreviewLayer?
-    let captureSession = AVCaptureSession()
-    let videoCaptureDevice = AVCaptureDevice.defaultDeviceWithMediaType(AVMediaTypeVideo)
+    private var camPreviewLayer = AVCaptureVideoPreviewLayer()
+    private let captureSession = AVCaptureSession()
+    private let videoCaptureDevice = AVCaptureDevice.defaultDeviceWithMediaType(AVMediaTypeVideo)
     
-    required init(coder aDecoder: NSCoder) {
+    required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         layer.masksToBounds = true
         unhighlightedBorderColor = borderColor
@@ -52,19 +52,15 @@ class BarcodeScannerView: UIView, AVCaptureMetadataOutputObjectsDelegate, AVCapt
         super.init(frame: frame)
     }
     
-    func startCamera() {
+    private func startCamera() {
         captureSession.sessionPreset = AVCaptureSessionPreset1280x720
-        
-        var error: NSError? = nil
-        let videoInput = AVCaptureDeviceInput(device: videoCaptureDevice, error: &error)
+        guard let videoInput = try? AVCaptureDeviceInput(device: videoCaptureDevice) else { return }
         
         captureSession.addInput(videoInput)
         
         let videoOutput = AVCaptureVideoDataOutput()
-        let queue = dispatch_queue_create("backQueue", nil)
-        videoOutput.setSampleBufferDelegate(self, queue: queue)
-        
-        videoOutput.videoSettings = NSDictionary(object: kCVPixelFormatType_32BGRA, forKey: kCVPixelBufferPixelFormatTypeKey)
+        videoOutput.setSampleBufferDelegate(self, queue: dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0))
+        videoOutput.videoSettings = nil
         
         let metaOutput = AVCaptureMetadataOutput()
         metaOutput.setMetadataObjectsDelegate(self, queue: dispatch_get_main_queue())
@@ -73,27 +69,27 @@ class BarcodeScannerView: UIView, AVCaptureMetadataOutputObjectsDelegate, AVCapt
         captureSession.addOutput(metaOutput)
         
         camPreviewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-        camPreviewLayer!.frame = bounds
-        camPreviewLayer!.videoGravity = AVLayerVideoGravityResizeAspectFill
+        camPreviewLayer.frame = bounds
+        camPreviewLayer.videoGravity = AVLayerVideoGravityResizeAspectFill
         
-        
-        /* Modify the metadataObjectTypes to suit your specific needs. You should 
-        probably check what types are available to your device with this: */
-        
-        //println("\(metaOutput.metadataObjectTypes)")
+        /* 
+        Modify the metadataObjectTypes to suit your specific needs. You should
+        probably check what types are available to your device with this:
+            println("\(metaOutput.metadataObjectTypes)")
+        */
         
         metaOutput.metadataObjectTypes = [AVMetadataObjectTypeUPCECode, AVMetadataObjectTypeEAN13Code, AVMetadataObjectTypeEAN8Code]
         
-        layer.addSublayer(camPreviewLayer!)
+        layer.addSublayer(camPreviewLayer)
         captureSession.startRunning()
         
         //camPreviewLayer!.connection.videoOrientation = videoOrientationForInterfaceOrientation()
     }
     
 //    override func didRotateFromInterfaceOrientation(fromInterfaceOrientation: UIInterfaceOrientation) {
-//        camPreviewLayer!.connection.videoOrientation = videoOrientationForInterfaceOrientation()
+//        camPreviewLayer.connection.videoOrientation = videoOrientationForInterfaceOrientation()
 //    }
-    
+//    
 //    func videoOrientationForInterfaceOrientation() -> AVCaptureVideoOrientation {
 //        switch interfaceOrientation {
 //        case UIInterfaceOrientation.LandscapeLeft:
@@ -120,18 +116,19 @@ class BarcodeScannerView: UIView, AVCaptureMetadataOutputObjectsDelegate, AVCapt
         }
     }
     
-    func didRecognizeBarcode(barcode: String) {
+    private func didRecognizeBarcode(barcode: String) {
         delegate?.didRecognizeBarcode(barcode)
     }
     
-    func highlight() {
+    private func highlight() {
         if borderColor != UIColor.greenColor() {
             borderColor = UIColor.greenColor()
             let timer = NSTimer.scheduledTimerWithTimeInterval(1.0, target: self, selector: "unhighlight", userInfo: nil, repeats: false)
+            NSRunLoop.currentRunLoop().addTimer(timer, forMode: NSDefaultRunLoopMode)
         }
     }
     
-    func unhighlight() {
+    private func unhighlight() {
         borderColor = unhighlightedBorderColor!
     }
 }
